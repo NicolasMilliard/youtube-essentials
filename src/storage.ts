@@ -5,6 +5,7 @@ export type Settings = {
   allowShortsOnChannels: boolean;
   hidePlayables: boolean;
   hideYtFeatured: boolean;
+  quietWatch: boolean;
   redirectHome: boolean;
   theme: Theme;
 };
@@ -14,6 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   allowShortsOnChannels: true,
   hidePlayables: true,
   hideYtFeatured: true,
+  quietWatch: false,
   redirectHome: false,
   theme: 'system',
 };
@@ -24,6 +26,7 @@ export async function getSettings(): Promise<Settings> {
     'allowShortsOnChannels',
     'hidePlayables',
     'hideYtFeatured',
+    'quietWatch',
     'redirectHome',
     'theme',
   ]);
@@ -48,6 +51,8 @@ export async function getSettings(): Promise<Settings> {
       typeof stored.hideYtFeatured === 'boolean'
         ? stored.hideYtFeatured
         : DEFAULT_SETTINGS.hideYtFeatured,
+    quietWatch:
+      typeof stored.quietWatch === 'boolean' ? stored.quietWatch : DEFAULT_SETTINGS.quietWatch,
     redirectHome:
       typeof stored.redirectHome === 'boolean'
         ? stored.redirectHome

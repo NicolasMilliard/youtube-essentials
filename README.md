@@ -14,6 +14,7 @@ No account. No analytics. No backend. Your preferences stay in your browser.
 - Optionally keep Shorts accessible on creator channel pages
 - Hide YouTube Playables from the home feed
 - Hide featured videos from the home feed
+- Quiet watch: optionally hide the full watch-page sidebar
 - Light, dark, and system themes
 - Settings stored locally with `chrome.storage.local`
 - No tracking or external requests
@@ -25,6 +26,21 @@ YouTube Essentials is not designed to block YouTube.
 It is designed to remove content that is pushed at you, while keeping intentional viewing available.
 
 For example, Shorts can stay hidden from recommendations while remaining accessible when you deliberately visit a creator's channel.
+
+### Quiet watch
+
+Turn on **Quiet watch** in the popup's **Content** section to hide the full sidebar beside a
+video. It is off by default, saved locally, and changes take effect on open YouTube tabs
+without a refresh.
+
+Quiet watch hides the `#secondary` watch-page container. This removes recommendations along
+with any playlist panel, live chat, transcript, donation, and other panels that YouTube puts
+there. On narrow layouts, YouTube can move recommendations below the player; Quiet watch
+hides that `#related` section too. The video, description, and comments remain available.
+YouTube may recalculate the player layout when the sidebar is hidden.
+
+Quiet watch does not disable autoplay or hide suggestions inside the player, such as end
+screens.
 
 ## Development
 
