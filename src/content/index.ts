@@ -5,6 +5,7 @@ const ATTRIBUTES = {
   allowShortsOnChannels: 'data-youtube-essentials-allow-shorts-on-channels',
   hidePlayables: 'data-youtube-essentials-hide-playables',
   hideYtFeatured: 'data-youtube-essentials-hide-yt-featured',
+  quietWatch: 'data-youtube-essentials-quiet-watch',
 } as const;
 
 function applySetting(attribute: string, enabled: boolean): void {
@@ -31,6 +32,7 @@ async function init(): Promise<void> {
 
   applySetting(ATTRIBUTES.hidePlayables, settings.hidePlayables);
   applySetting(ATTRIBUTES.hideYtFeatured, settings.hideYtFeatured);
+  applySetting(ATTRIBUTES.quietWatch, settings.quietWatch);
 
   startShortsFilterObserver();
 }
@@ -62,6 +64,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
   if (typeof hideYtFeatured === 'boolean') {
     applySetting(ATTRIBUTES.hideYtFeatured, hideYtFeatured);
+  }
+
+  const quietWatch = changes.quietWatch?.newValue;
+
+  if (typeof quietWatch === 'boolean') {
+    applySetting(ATTRIBUTES.quietWatch, quietWatch);
   }
 });
 

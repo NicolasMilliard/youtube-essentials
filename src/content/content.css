@@ -101,3 +101,12 @@ html[data-youtube-essentials-hide-yt-featured]
   ytd-rich-section-renderer:has(ytd-brand-video-singleton-renderer) {
   display: none !important;
 }
+
+/* ==========================================================================
+   Quiet watch
+   ========================================================================== */
+
+html[data-youtube-essentials-quiet-watch] ytd-watch-flexy #secondary,
+html[data-youtube-essentials-quiet-watch] ytd-watch-flexy #related {
+  display: none !important;
+}
