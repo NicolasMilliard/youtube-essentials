@@ -6,6 +6,8 @@ out
 dist
 *.tgz
 youtube-essentials.zip
+artifacts/
+web-ext-artifacts/
 
 # code coverage
 coverage

@@ -1,0 +1,7 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["chrome-types", "firefox-webext-browser", "bun"]
+  },
+  "include": ["./**/*.ts"]
+}

@@ -1,3 +1,4 @@
+import { extensionStorage } from '../extension';
 import { getSettings } from '../storage';
 
 const ATTRIBUTES = {
@@ -37,7 +38,7 @@ async function init(): Promise<void> {
   startShortsFilterObserver();
 }
 
-chrome.storage.onChanged.addListener((changes, areaName) => {
+extensionStorage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local') {
     return;
   }

@@ -1,3 +1,5 @@
+import { extensionStorage } from './extension';
+
 export type Theme = 'system' | 'light' | 'dark';
 
 export type Settings = {
@@ -21,7 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export async function getSettings(): Promise<Settings> {
-  const stored = await chrome.storage.local.get([
+  const stored = await extensionStorage.local.get([
     'hideShorts',
     'allowShortsOnChannels',
     'hidePlayables',
@@ -65,7 +67,7 @@ export async function setSetting<K extends keyof Settings>(
   key: K,
   value: Settings[K],
 ): Promise<void> {
-  await chrome.storage.local.set({
+  await extensionStorage.local.set({
     [key]: value,
   });
 }

@@ -4,7 +4,7 @@
 
 > YouTube, minus the noise.
 
-YouTube Essentials is a lightweight Chrome extension that removes distracting content from YouTube while keeping the core viewing experience intact.
+YouTube Essentials is a lightweight extension for Chrome and Firefox that removes distracting content from YouTube while keeping the core viewing experience intact.
 
 No account. No analytics. No backend. Your preferences stay in your browser.
 
@@ -16,7 +16,7 @@ No account. No analytics. No backend. Your preferences stay in your browser.
 - Hide featured videos from the home feed
 - Quiet watch: optionally hide the full watch-page sidebar
 - Light, dark, and system themes
-- Settings stored locally with `chrome.storage.local`
+- Settings stored locally using the browser's extension storage
 - No tracking or external requests
 
 ## Philosophy
@@ -46,36 +46,77 @@ screens.
 
 ### Requirements
 
-- [Bun](https://bun.sh/)
-- Google Chrome or another Chromium-based browser
+- [Bun](https://bun.sh/) 1.3.13 (used for the reproducible build)
+- [Node.js](https://nodejs.org/) 22 or later for Mozilla's `web-ext` tooling
+- Google Chrome 120+ (or another compatible Chromium-based browser), or desktop Firefox 140+
+
+Firefox 140 is the minimum supported version for the built-in data collection declaration.
+It also supports the `:has()` CSS selectors used to filter YouTube content.
 
 ### Install dependencies
 
 ```bash
-bun install
+bun install --frozen-lockfile
 ```
 
-### Development
+### Chrome development
 
 ```bash
 bun run dev
 ```
 
-This watches the TypeScript and static files and updates the `dist/` directory.
+This watches TypeScript, the manifest, and static files and updates `dist/chrome/`.
 
 After changing extension files:
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
-3. Load `dist/` with **Load unpacked**
+3. Load `dist/chrome/` with **Load unpacked**
 4. Reload the extension when necessary
 5. Refresh YouTube
+
+If you previously loaded `dist/`, remove that unpacked development installation and load
+`dist/chrome/` instead. Production Chrome Web Store installations are unaffected.
+
+### Firefox development
+
+```bash
+bun run dev:firefox
+```
+
+This watches the shared source and both manifest files and updates `dist/firefox/`.
+In Firefox:
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on**
+3. Select `dist/firefox/manifest.json`
+4. Reload the extension after changes, then refresh YouTube
+
+Temporary installations are removed when Firefox closes. Allow the extension access to
+`www.youtube.com`; if access is revoked, the content filters cannot run.
+
+Alternatively, use a separate terminal to launch a temporary Firefox profile with automatic
+extension reloading while `dev:firefox` is running:
+
+```bash
+bun run start:firefox
+```
+
+Refresh YouTube after an extension reload. Restart the build watcher if you change
+`strict_min_version`, since esbuild's compilation target is selected at startup.
 
 ### Build
 
 ```bash
-bun run build
+bun run build:chrome   # Chrome explicitly
+bun run build:firefox  # Firefox
+bun run build:all      # Both browsers
 ```
+
+Each build cleans only its own output directory. The shared `manifest.json` supplies the
+extension's version, permissions, popup, and content scripts. The Firefox build merges in the
+top-level fields from `manifest.firefox.json`, including the stable add-on ID, minimum Firefox
+version, and declaration that no data is collected. Firefox metadata is excluded from Chrome.
 
 ### Validate
 
@@ -83,7 +124,62 @@ bun run build
 bun run check
 ```
 
-This runs formatting checks, TypeScript validation, and the production build.
+This runs formatting checks, TypeScript validation for the extension and tests, storage compatibility tests, both
+production builds, and Mozilla's add-on validator.
+
+The current validator also checks Android compatibility even without a `gecko_android`
+manifest entry. It reports `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` because the data
+collection declaration arrived in Android 142, versus desktop 140. This build supports
+desktop Firefox only; Android compatibility is not advertised. Review any other validation
+warnings before releasing.
+
+The individual commands are `bun run test` and `bun run lint:firefox` (the latter requires
+`bun run build:firefox` first).
+
+Before a Firefox release, manually check both the minimum supported version and current Firefox:
+
+- All content toggles, including Shorts on channel pages and Shorts search filters
+- Home, search, channel, and watch pages, including YouTube's internal navigation
+- Quiet watch at wide and narrow window sizes
+- Homepage redirection when enabled, with no redirect for other URLs
+- Popup layout, keyboard controls, and light/dark/system themes
+- Saved settings after reopening the popup and live changes across multiple YouTube tabs
+- Revoking and restoring YouTube site access, then refreshing the page
+- Persistence across browser restarts using a signed installation
+
+Run a Chrome smoke check as well because both browsers share the application code.
+
+### Package and distribute
+
+```bash
+bun run package:chrome
+bun run package:firefox
+```
+
+Both commands run the full validation first. They create
+`artifacts/youtube-essentials-chrome.zip` and `artifacts/youtube-essentials-firefox.zip`,
+respectively.
+Each archive contains only that browser's built extension, with `manifest.json` at its root.
+
+The Firefox archive is unsigned. For normal installation in Firefox, submit it to
+[Mozilla Add-ons](https://addons.mozilla.org/developers/) for signing, choosing either a public
+listing or unlisted distribution. Keep `browser_specific_settings.gecko.id` unchanged for
+future releases. Building and packaging locally does not submit or publish anything.
+
+Because the extension is built from TypeScript, Mozilla also requires a source archive.
+Include `src/`, `scripts/`, `tests/`, both manifest files, `package.json`, `bun.lock`,
+`tsconfig.json`, the Prettier configuration files, this README, and the license/privacy files.
+Exclude `node_modules/`, `dist/`, `.git/`, and generated archives. From that source archive's
+root directory, a reviewer can reproduce the Firefox build with:
+
+```bash
+bun install --frozen-lockfile
+bun run build:firefox
+```
+
+These commands were validated with Bun 1.3.13 on macOS. No environment variables, credentials,
+or OS-specific build tools are needed. The generated `dist/firefox/` files are the files to
+compare with the submitted extension archive.
 
 ## Project structure
 
@@ -99,10 +195,15 @@ This runs formatting checks, TypeScript validation, and the production build.
 │   │   ├── popup.css
 │   │   ├── popup.html
 │   │   └── popup.ts
+│   ├── extension.ts
 │   └── storage.ts
 ├── scripts/
 │   └── build.mjs
 ├── manifest.json
+├── manifest.firefox.json
+├── tests/
+│   ├── storage.test.ts
+│   └── tsconfig.json
 └── tsconfig.json
 ```
 
@@ -116,7 +217,7 @@ The extension:
 - does not communicate with a backend
 - does not make external network requests
 - does not require an account
-- stores preferences locally using Chrome's extension storage
+- stores preferences locally using the browser's extension storage
 
 The extension only runs on YouTube pages in order to hide the selected interface elements.
 
@@ -129,7 +230,7 @@ CSS selectors then hide the corresponding interface elements.
 ```text
 User preference
       ↓
-chrome.storage.local
+Browser extension storage
       ↓
 Content script
       ↓
