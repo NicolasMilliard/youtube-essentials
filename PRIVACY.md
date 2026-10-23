@@ -1,6 +1,6 @@
 # Privacy Policy — YouTube Essentials
 
-_Last updated: August 30, 2026_
+_Last updated: October 23, 2026_
 
 YouTube Essentials is designed with privacy as a core principle.
 
@@ -22,7 +22,8 @@ The extension does not use:
 
 ## Local preferences
 
-YouTube Essentials stores extension preferences locally in your browser using `chrome.storage.local`.
+YouTube Essentials stores extension preferences locally using the browser's extension storage
+API (`chrome.storage.local` in Chrome and `browser.storage.local` in Firefox).
 
 These preferences currently include:
 
@@ -30,6 +31,8 @@ These preferences currently include:
 - Whether Shorts remain available on creator channel pages
 - Whether Playables are hidden
 - Whether featured videos are hidden
+- Whether the watch-page sidebar is hidden (Quiet watch)
+- Whether opening the YouTube homepage redirects to subscriptions
 - Your selected appearance theme
 
 These settings remain on your device and are not transmitted to the developer or any third party.
@@ -74,7 +77,7 @@ No browsing data, website content, or extension data is sent to the developer or
 
 The developer does not retain user data because YouTube Essentials does not transmit or remotely store user data.
 
-Preferences stored locally by Chrome remain on your device until they are changed, cleared, or the extension is uninstalled.
+Preferences stored locally by your browser remain on your device until they are changed, cleared, or the extension is uninstalled.
 
 ## Third parties
 
@@ -84,7 +87,7 @@ YouTube Essentials does not sell, share, or transfer user data to third parties.
 
 This privacy policy may be updated if the functionality of YouTube Essentials changes.
 
-Any change involving data collection, processing, or transmission will be reflected in this policy and in the Chrome Web Store privacy disclosures.
+Any change involving data collection, processing, or transmission will be reflected in this policy and in the Chrome Web Store and Firefox Add-ons privacy disclosures.
 
 ## Contact
 

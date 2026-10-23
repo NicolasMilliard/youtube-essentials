@@ -4,20 +4,29 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun scripts/build.mjs",
+    "build:chrome": "bun scripts/build.mjs --browser chrome",
+    "build:firefox": "bun scripts/build.mjs --browser firefox",
+    "build:all": "bun run build:chrome && bun run build:firefox",
     "dev": "bun scripts/build.mjs --watch",
-    "typecheck": "tsc --noEmit",
+    "dev:firefox": "bun scripts/build.mjs --browser firefox --watch",
+    "start:firefox": "bun run build:firefox && web-ext run --source-dir dist/firefox",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json",
+    "test": "bun test",
+    "lint:firefox": "web-ext lint --source-dir dist/firefox",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "bun run format:check && bun run typecheck && bun run build",
-    "package": "bun run check && rm -f youtube-essentials.zip && cd dist && zip -r ../youtube-essentials.zip ."
+    "check": "bun run format:check && bun run typecheck && bun run test && bun run build:all && bun run lint:firefox",
+    "package:chrome": "bun run check && web-ext build --source-dir dist/chrome --artifacts-dir artifacts --filename youtube-essentials-chrome.zip --overwrite-dest",
+    "package:firefox": "bun run check && web-ext build --source-dir dist/firefox --artifacts-dir artifacts --filename youtube-essentials-firefox.zip --overwrite-dest"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/firefox-webext-browser": "^143.0.1",
     "chokidar": "^5.0.0",
     "chrome-types": "^0.1.440",
     "esbuild": "^0.28.2",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "web-ext": "^10.8.0"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
