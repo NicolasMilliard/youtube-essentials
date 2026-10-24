@@ -7,7 +7,7 @@
     "build:chrome": "bun scripts/build.mjs --browser chrome",
     "build:firefox": "bun scripts/build.mjs --browser firefox",
     "build:all": "bun run build:chrome && bun run build:firefox",
-    "dev": "bun scripts/build.mjs --watch",
+    "dev:chrome": "bun scripts/build.mjs --watch",
     "dev:firefox": "bun scripts/build.mjs --browser firefox --watch",
     "start:firefox": "bun run build:firefox && web-ext run --source-dir dist/firefox",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tests/tsconfig.json",
