@@ -11,7 +11,7 @@ on:
         type: string
         default: main
       store:
-        description: 'check validates Chrome access without submitting either store'
+        description: 'check validates access to both stores without submitting updates'
         required: true
         type: choice
         default: check
@@ -134,7 +134,7 @@ jobs:
 
   firefox:
     needs: build
-    if: github.event_name == 'push' || inputs.store == 'both' || inputs.store == 'firefox'
+    if: github.event_name == 'push' || inputs.store == 'check' || inputs.store == 'both' || inputs.store == 'firefox'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -162,15 +162,18 @@ jobs:
       - name: Extract the validated Firefox package
         run: unzip -q artifacts/youtube-essentials-firefox.zip -d dist/firefox
 
-      - name: Submit Firefox update and source
+      - name: Check Firefox access or submit update and source
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
           : "${WEB_EXT_API_KEY:?Missing AMO_JWT_ISSUER}"
           : "${WEB_EXT_API_SECRET:?Missing AMO_JWT_SECRET}"
-          ./node_modules/.bin/web-ext sign \
-            --source-dir dist/firefox \
-            --channel listed \
-            --upload-source-code artifacts/youtube-essentials-source.zip \
-            --approval-timeout 0
+          node scripts/check-firefox-auth.mjs
+          if [ "$RELEASE_MODE" != "check" ]; then
+            ./node_modules/.bin/web-ext sign \
+              --source-dir dist/firefox \
+              --channel listed \
+              --upload-source-code artifacts/youtube-essentials-source.zip \
+              --approval-timeout 0
+          fi
