@@ -1,11 +1,42 @@
 import { expect, test } from 'bun:test';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { runInNewContext } from 'node:vm';
 
 const workflow = Bun.YAML.parse(await Bun.file('.github/workflows/release.yml').text());
+
+test('Firefox package extraction succeeds in a fresh job without dist', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'youtube-release-extraction-'));
+  try {
+    const packageDirectory = join(directory, 'package');
+    const archive = join(directory, 'artifacts/youtube-essentials-firefox.zip');
+    const manifest = JSON.stringify({
+      browser_specific_settings: { gecko: { id: 'extension@example.com' } },
+    });
+    await mkdir(packageDirectory);
+    await mkdir(join(directory, 'artifacts'));
+    await writeFile(join(packageDirectory, 'manifest.json'), manifest);
+    const zip = spawnSync('zip', ['-q', archive, 'manifest.json'], {
+      cwd: packageDirectory,
+      encoding: 'utf8',
+    });
+    expect(zip.status, zip.stderr).toBe(0);
+
+    const step = workflow.jobs.firefox.steps.find(
+      (step) => step.name === 'Extract the validated Firefox package',
+    );
+    const extraction = spawnSync('bash', ['-e', '-o', 'pipefail', '-c', step.run], {
+      cwd: directory,
+      encoding: 'utf8',
+    });
+    expect(extraction.status, extraction.stderr).toBe(0);
+    expect(await readFile(join(directory, 'dist/firefox/manifest.json'), 'utf8')).toBe(manifest);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test.each([
   ['workflow_dispatch', 'check', ['chrome', 'firefox']],
