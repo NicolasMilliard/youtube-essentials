@@ -98,7 +98,8 @@ html[data-youtube-essentials-hide-playables] ytd-rich-section-renderer:has(a[hre
 /* Home feed */
 
 html[data-youtube-essentials-hide-yt-featured]
-  ytd-rich-section-renderer:has(ytd-brand-video-singleton-renderer) {
+  ytd-rich-section-renderer:has(ytd-brand-video-singleton-renderer, ytd-brand-video-shelf-renderer),
+html[data-youtube-essentials-hide-yt-featured] ytd-brand-video-shelf-renderer {
   display: none !important;
 }
 
