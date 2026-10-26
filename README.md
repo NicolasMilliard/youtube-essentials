@@ -2,6 +2,8 @@
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Install-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/youtube-essentials/ehifhlciopjmjlfgdgkkamfhkjgjamig)
 
+[![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-Install-FF7139?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/youtube-essentials/)
+
 > YouTube, minus the noise.
 
 YouTube Essentials is a lightweight extension for Chrome and Firefox that removes distracting content from YouTube while keeping the core viewing experience intact.
@@ -251,4 +253,4 @@ If something stops being hidden after a YouTube update, feel free to open an iss
 
 ## License
 
-MIT
+[MIT](./LICENSE.md)
