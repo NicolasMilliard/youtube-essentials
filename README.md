@@ -126,8 +126,9 @@ version, and declaration that no data is collected. Firefox metadata is excluded
 bun run check
 ```
 
-This runs formatting checks, TypeScript validation for the extension and tests, storage compatibility tests, both
-production builds, and Mozilla's add-on validator.
+This runs formatting checks, TypeScript validation for the extension and TypeScript tests,
+storage compatibility and release workflow tests, both production builds, and Mozilla's add-on validator.
+Release tests use mocked API responses and commands; they do not contact either store.
 
 The current validator also checks Android compatibility even without a `gecko_android`
 manifest entry. It reports `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` because the data
@@ -183,6 +184,37 @@ These commands were validated with Bun 1.3.13 on macOS. No environment variables
 or OS-specific build tools are needed. The generated `dist/firefox/` files are the files to
 compare with the submitted extension archive.
 
+### Automated store releases
+
+The **Release** GitHub Actions workflow builds and submits updates to both existing store
+listings when a tag such as `v1.1.2` is pushed. The tag must match the version in
+`manifest.json`. It runs `bun run check`, packages both browsers, and creates a source
+archive from the tagged commit for Mozilla reviewers. Chrome and Firefox submissions run
+in separate jobs.
+
+Configure these repository settings under **Settings → Secrets and variables → Actions**:
+
+| Setting                    | Type     | Value                                                                                                 |
+| -------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
+| `CWS_SERVICE_ACCOUNT_JSON` | Secret   | Complete JSON key for the service account linked to the Chrome Web Store publisher                    |
+| `CWS_PUBLISHER_ID`         | Variable | Chrome Web Store publisher ID                                                                         |
+| `CWS_EXTENSION_ID`         | Variable | Chrome Web Store extension ID                                                                         |
+| `AMO_JWT_ISSUER`           | Secret   | Mozilla API key from the [API credentials page](https://addons.mozilla.org/developers/addon/api/key/) |
+| `AMO_JWT_SECRET`           | Secret   | Associated Mozilla API secret                                                                         |
+
+Once the workflow is on the default branch, use **Actions → Release → Run workflow** with
+`store: check` and `ref: main` to validate access to **both stores without submitting an update**.
+Chrome reads the extension status. Firefox authenticates with the AMO credentials and checks
+that the ID from the packaged Firefox manifest appears in the account's add-ons, using the
+[authenticated add-on list](https://mozilla.github.io/addons-server/topics/api/addons.html#list).
+These checks validate access; they do not guarantee that a future submission will pass store validation or review.
+
+For an actual release, merge the version bump and changes, then push the matching version
+tag. A manual run with `store: both`, `chrome`, or `firefox` requires an existing matching
+version tag in `ref`. Firefox also checks access before submitting its package and source.
+If only one store job fails, inspect its dashboard and retry that store alone; a previous
+submission may already have been accepted. Successful submission does not mean review is complete.
+
 ## Project structure
 
 ```text
@@ -200,10 +232,14 @@ compare with the submitted extension archive.
 │   ├── extension.ts
 │   └── storage.ts
 ├── scripts/
-│   └── build.mjs
+│   ├── build.mjs
+│   ├── check-firefox-auth.mjs
+│   └── publish-chrome.mjs
 ├── manifest.json
 ├── manifest.firefox.json
 ├── tests/
+│   ├── check-firefox-auth.test.js
+│   ├── release-workflow.test.js
 │   ├── storage.test.ts
 │   └── tsconfig.json
 └── tsconfig.json
