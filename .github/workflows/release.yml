@@ -160,7 +160,9 @@ jobs:
           path: artifacts
 
       - name: Extract the validated Firefox package
-        run: unzip -q artifacts/youtube-essentials-firefox.zip -d dist/firefox
+        run: |
+          mkdir -p dist/firefox
+          unzip -q artifacts/youtube-essentials-firefox.zip -d dist/firefox
 
       - name: Check Firefox access or submit update and source
         env:
