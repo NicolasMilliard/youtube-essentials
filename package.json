@@ -25,6 +25,7 @@
     "chokidar": "^5.0.0",
     "chrome-types": "^0.1.440",
     "esbuild": "^0.28.2",
+    "google-auth-library": "11.3.1",
     "prettier": "^3.9.6",
     "web-ext": "^10.8.0"
   },

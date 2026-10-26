@@ -1,0 +1,176 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch for check, existing version tag for submission'
+        required: true
+        type: string
+        default: main
+      store:
+        description: 'check validates Chrome access without submitting either store'
+        required: true
+        type: choice
+        default: check
+        options: [check, both, chrome, firefox]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_REF: ${{ inputs.ref || github.ref_name }}
+  RELEASE_MODE: ${{ github.event_name == 'push' && 'both' || inputs.store }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      sha: ${{ steps.revision.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.store == 'check' && inputs.ref || format('refs/tags/{0}', inputs.ref) }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
+
+      - name: Verify version and record commit
+        id: revision
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const { version } = JSON.parse(readFileSync('manifest.json', 'utf8'));
+          const tag = process.env.RELEASE_REF;
+          if (process.env.RELEASE_MODE !== 'check' &&
+              (!/^v\d+\.\d+\.\d+$/.test(tag) || tag !== `v${version}`)) {
+            throw new Error(`Tag ${tag} must match manifest version v${version}`);
+          }
+          NODE
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Validate and build both browsers
+        run: bun run check
+
+      - name: Package extensions and reviewer source
+        run: |
+          mkdir -p artifacts
+          ./node_modules/.bin/web-ext build \
+            --source-dir dist/chrome \
+            --artifacts-dir artifacts \
+            --filename youtube-essentials-chrome.zip
+          ./node_modules/.bin/web-ext build \
+            --source-dir dist/firefox \
+            --artifacts-dir artifacts \
+            --filename youtube-essentials-firefox.zip
+          git archive --format=zip \
+            --output=artifacts/youtube-essentials-source.zip HEAD
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-packages
+          path: artifacts/*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  chrome:
+    needs: build
+    if: github.event_name == 'push' || inputs.store == 'check' || inputs.store == 'both' || inputs.store == 'chrome'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
+
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-packages
+          path: artifacts
+
+      - name: Check Chrome access or submit update
+        env:
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ "$RELEASE_MODE" = "check" ]; then
+            node scripts/publish-chrome.mjs --check-auth
+          else
+            node scripts/publish-chrome.mjs
+          fi
+
+  firefox:
+    needs: build
+    if: github.event_name == 'push' || inputs.store == 'both' || inputs.store == 'firefox'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.build.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.13'
+
+      - run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-packages
+          path: artifacts
+
+      - name: Extract the validated Firefox package
+        run: unzip -q artifacts/youtube-essentials-firefox.zip -d dist/firefox
+
+      - name: Submit Firefox update and source
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          : "${WEB_EXT_API_KEY:?Missing AMO_JWT_ISSUER}"
+          : "${WEB_EXT_API_SECRET:?Missing AMO_JWT_SECRET}"
+          ./node_modules/.bin/web-ext sign \
+            --source-dir dist/firefox \
+            --channel listed \
+            --upload-source-code artifacts/youtube-essentials-source.zip \
+            --approval-timeout 0
