@@ -15,7 +15,7 @@ No account. No analytics. No backend. Your preferences stay in your browser.
 - Hide Shorts from navigation and recommendations
 - Optionally keep Shorts accessible on creator channel pages
 - Hide YouTube Playables from the home feed
-- Hide featured videos from the home feed
+- Hide YouTube featured videos and promotional banners from the home feed
 - Quiet watch: optionally hide the full watch-page sidebar
 - Light, dark, and system themes
 - Settings stored locally using the browser's extension storage

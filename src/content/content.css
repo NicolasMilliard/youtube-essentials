@@ -92,14 +92,19 @@ html[data-youtube-essentials-hide-playables] ytd-rich-section-renderer:has(a[hre
 }
 
 /* ==========================================================================
-   Featured videos
+   YouTube featured
    ========================================================================== */
 
 /* Home feed */
 
 html[data-youtube-essentials-hide-yt-featured]
-  ytd-rich-section-renderer:has(ytd-brand-video-singleton-renderer, ytd-brand-video-shelf-renderer),
-html[data-youtube-essentials-hide-yt-featured] ytd-brand-video-shelf-renderer {
+  ytd-rich-section-renderer:has(
+    ytd-brand-video-singleton-renderer,
+    ytd-brand-video-shelf-renderer,
+    ytd-statement-banner-renderer
+  ),
+html[data-youtube-essentials-hide-yt-featured] ytd-brand-video-shelf-renderer,
+html[data-youtube-essentials-hide-yt-featured] ytd-statement-banner-renderer {
   display: none !important;
 }
 
